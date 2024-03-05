@@ -3,11 +3,14 @@ import std/hashes
 
 import pcp/tailcalls
 
-when not defined(danger):
-  echo "this test only works on danger"
+when compileOption"stackTrace":
   quit 1
 
-const N = 10_000
+const N =
+  when defined(danger):
+    10_000
+  else:
+    100
 
 var n: Atomic[int]
 
