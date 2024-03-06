@@ -32,7 +32,7 @@ proc main =
     else:
       var x: Bar[T, T]
       x.t = foo[].a-1
-      x.fn = serialize: Fn[Bar[T, T], T] fib[T, T]
+      x.fn = serialize fib[T, T]
       x.fn(addr x, r)
       foo[].a = foo[].a-2
       mustTail foo[].fn(foo, r)
@@ -42,7 +42,7 @@ proc main =
     foo.a = a
     foo.b = b
     register(Fn[Foo[T], T] fib[T])
-    foo.fn = serialize: Fn[Foo[T], T] fib[T]
+    foo.fn = serialize fib[T]
     foo.fn(addr foo, addr result)
 
   proc calc[T, R](t: T): R =
