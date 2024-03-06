@@ -23,8 +23,7 @@ proc main =
       x.t = bar[].t-1
       x.fn(addr x, r)
       bar[].t = bar[].t-2
-      var p = bar[].fn.fp
-      mustTail p(bar, r)
+      mustTail bar[].fn(bar, r)
 
   proc fib[T](foo: ptr Foo[T]; r: ptr T) {.nimcall.} =
     if foo[].a < 2:
@@ -36,8 +35,7 @@ proc main =
       x.fn = serialize: Fn[Bar[T, T], T] fib[T, T]
       x.fn(addr x, r)
       foo[].a = foo[].a-2
-      var p = foo[].fn.fp
-      mustTail p(foo, r)
+      mustTail foo[].fn(foo, r)
 
   proc calc[T](a, b: T): T =
     var foo: Foo[T]
