@@ -1,6 +1,7 @@
 import std/genasts
-import std/macrocache
 import std/macros
+
+const pcpDynamic {.booldefine.} = false
 
 type
     Fun*[T, R] {.union.} = object
@@ -15,10 +16,6 @@ proc `=copy`[T, R](target: var Fun[T, R]; source: Fun[T, R]) =
 
 var functions: seq[pointer]
 functions.add(nil)
-
-macro register*[T, R](function: Fn[T, R]): untyped =
-  genAstOpt({}, function, functions=bindSym"functions"):
-    functions.add(cast[pointer](function))
 
 proc ser(fun: NimNode; tipe: NimNode): NimNode =
   genAstOpt({}, tipe, functions=bindSym"functions", p=fun):
@@ -37,26 +34,32 @@ proc deser(index: NimNode; tipe: NimNode): NimNode =
     if n <= functions.high:
       cast[tipe](functions[n])
     else:
-      cast[tipe](n)
+      when pcpDynamic:
+        cast[tipe](n)
+      else:
+        raise Defect.newException "no dynamic continuations"
 
-when false:
-  proc deser(index: NimNode): NimNode =
-    deser(index, bindSym"pointer")
+proc register(function: NimNode): NimNode =
+  genAstOpt({}, function, functions=bindSym"functions"):
+    let p = cast[pointer](function)
+    if p notin functions:
+      functions.add p
+
+macro register*[T, R](function: Fn[T, R]): untyped =
+  register function
+  #genAstOpt({}, function, functions=bindSym"functions"):
+  #  functions.incl(cast[pointer](function))
 
 macro serialize*[T, R](fun: Fn[T, R]): untyped =
+  result = newStmtList()
+  result.add: register fun
   let t = getTypeInst fun
   let a = t[0][1][1].last # ptr -> bracket
   let b = t[0][2][1].last # ptr -> bracket
-  ser(fun, nnkBracketExpr.newTree(bindSym"Fun", a, b))
+  result.add: ser(fun, nnkBracketExpr.newTree(bindSym"Fun", a, b))
 
 macro deserialize*(index: int; tipe: typedesc): untyped =
   deser(index, tipe)
-
-macro call*(index: int; tipe: typedesc; args: varargs[typed]): untyped =
-  result = deser(index, tipe)
-  result = newCall result
-  for arg in args.items:
-    result.add arg
 
 proc fp(fun: NimNode): NimNode =
   let t = getTypeInst fun

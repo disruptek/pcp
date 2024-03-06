@@ -41,14 +41,12 @@ proc main =
     var foo: Foo[T]
     foo.a = a
     foo.b = b
-    register(Fn[Foo[T], T] fib[T])
     foo.fn = serialize fib[T]
     foo.fn(addr foo, addr result)
 
   proc calc[T, R](t: T): R =
     var bar: Bar[T, R]
     bar.t = t
-    register(Fn[Bar[T, R], R] fib[T, R])
     bar.fn = serialize fib[T, R]
     bar.fn(addr bar, addr result)
 
