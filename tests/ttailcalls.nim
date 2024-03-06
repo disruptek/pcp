@@ -3,9 +3,6 @@ import std/hashes
 
 import pcp/tailcalls
 
-when compileOption"stackTrace":
-  quit 1
-
 const N =
   when defined(danger):
     10_000

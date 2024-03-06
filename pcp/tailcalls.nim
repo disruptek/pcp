@@ -16,7 +16,9 @@ proc tco(call: NimNode): NimNode =
   ## statement with the musttail compiler attribute
   result = newStmtList()
   let call = install(result, call)
-  when defined(clang):
+  when compileOption"stackTrace":
+    {.error: "never mix pcp and stracktraces... trust me".}
+  elif defined(clang):
     result.add newEmit "__attribute__((musttail)) return"
     result.add call
     result.add newEmit ";"
@@ -26,6 +28,9 @@ proc tco(call: NimNode): NimNode =
     result.add newEmit ";"
   else:
     {.warning: "tail calls require clang/gcc".}
+    result.add call
+  result = pushPopOff(ident"stackTrace", result)
+  result = pushPopOff(ident"profiler", result)
 
 macro mustTail*(tipe: typedesc; call: typed): untyped =
   ## perform a tail call with a return type; suitable for typed calls

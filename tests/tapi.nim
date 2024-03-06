@@ -1,9 +1,6 @@
 import pcp/registry
 import pcp/tailcalls
 
-when compileOption"stacktrace":
-  quit 1
-
 proc main =
   type
     Foo[T] {.byref.} = object
