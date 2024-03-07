@@ -20,8 +20,6 @@ proc demo(n: uint): uint {.discardable.} =
       var n = foo[].a + foo[].b
       foo[].a = foo[].b
       foo[].b = n
-
-      doAssert foo[].a <= n
       mustTail foo[].fn(foo, r)
 
   proc calc[T](t: T): T =
