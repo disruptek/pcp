@@ -20,7 +20,10 @@ proc tco(call: NimNode): NimNode =
   # supply something which merely evaluates to a function pointer
   let call = install(result, call)
 
-  when defined(clang):
+  when not pcpHasTailCalls:
+    {.warning: "tail calls require clang/gcc".}
+    result.add call  # maybe it won't matter...
+  elif defined(clang):
     result.add newEmit "__attribute__((musttail)) return"
     result.add call
     result.add newEmit ";"
@@ -29,8 +32,7 @@ proc tco(call: NimNode): NimNode =
     result.add call
     result.add newEmit ";"
   else:
-    {.warning: "tail calls require clang/gcc".}
-    result.add call  # maybe it won't matter...
+    {.error: "tailcalls on your platform are unsupported".}
 
 macro mustTail*(tipe: typedesc; call: typed): untyped =
   ## perform a tail call with a return type; suitable for typed calls

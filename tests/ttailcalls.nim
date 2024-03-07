@@ -5,7 +5,11 @@ import pkg/criterion
 
 import pcp
 
-const N = 100_000
+const N =
+  when pcpHasTailCalls:
+    100_000
+  else:
+    10_000
 
 var n: Atomic[int]
 
@@ -50,9 +54,10 @@ proc main =
         flip(x)
         dec x
 
-    proc recursion() {.measure.} =
-      n.store(N)
-      flick(0)
+    when not pcpHasTailCalls:
+      proc recursion() {.measure.} =
+        n.store(N)
+        flick(0)
 
     proc tailcall() {.measure.} =
       n.store(N)
