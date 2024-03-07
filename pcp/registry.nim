@@ -32,14 +32,15 @@ proc ser(fun: NimNode; tipe: NimNode): NimNode =
 
 proc deser(index: NimNode; tipe: NimNode): NimNode =
   genAstOpt({}, index, tipe, functions=bindSym"functions"):
-    let n = index
-    if n <= functions.high:
-      cast[tipe](functions[n])
-    else:
-      when pcpDynamic:
-        cast[tipe](n)
+    block:  # for nlvm
+      let n = index
+      if n <= functions.high:
+        cast[tipe](functions[n])
       else:
-        raise Defect.newException "no dynamic continuations"
+        when pcpDynamic:
+          cast[tipe](n)
+        else:
+          raise Defect.newException "no dynamic continuations"
 
 proc register(function: NimNode): NimNode =
   genAstOpt({}, function, functions=bindSym"functions"):

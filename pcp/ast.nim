@@ -20,6 +20,8 @@ macro tco*(function: untyped): untyped =
   ## annotate a function type/decl for tail-call optimization
   result = function
   result.addPragma ident"nimcall"
+  when defined(danger):
+    result.addPragma ident"inline"
   when compileOption"stackTrace":
     if function.kind == nnkProcDef:
       result = pushPopOff(ident"stackTrace", result)

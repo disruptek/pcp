@@ -1,13 +1,11 @@
 import std/atomics
 import std/hashes
 
+import pkg/criterion
+
 import pcp
 
-const N =
-  when defined(danger):
-    10_000
-  else:
-    100
+const N = 100_000
 
 var n: Atomic[int]
 
@@ -39,28 +37,24 @@ proc flick(x: int) {.tco.} =
 proc flip(x: int): bool {.tco.} =
   return work(x) > 0
 
-import pkg/criterion
-
 proc main =
   var cfg = newDefaultConfig()
   cfg.warmupBudget = 0.1
   cfg.budget = 0.1
 
-  echo "\nexpect that flicker < flapper < flipper\n"
-
   benchmark cfg:
-    proc flicker_recurse() {.measure.} =
-      n.store(N)
-      flick(0)
-
-    proc flapper_tail() {.measure.} =
-      n.store(N)
-      flap(0)
-
-    proc flipper_loop() {.measure.} =
+    proc looping() {.measure.} =
       n.store(N)
       var x = N
       while flip(x):
         dec x
+
+    proc recursion() {.measure.} =
+      n.store(N)
+      flick(0)
+
+    proc tailcall() {.measure.} =
+      n.store(N)
+      flap(0)
 
 main()

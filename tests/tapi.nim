@@ -1,52 +1,51 @@
+import pkg/criterion
+
 import pcp
 
-proc main =
+proc demo(n: uint): uint {.discardable.} =
   type
     Foo[T] {.byref.} = object
       fn: Fun[Foo[T], T]
       a: T
       b: T
 
-    Bar[T, R] {.byref.} = object
-      fn: Fun[Bar[T, R], R]
-      t: T
-
-  proc fib[T, R](bar: ptr Bar[T, R]; r: ptr R) {.tco.} =
-    if bar[].t < 2:
-      r[] += R bar[].t
-    else:
-      var x = bar[]
-      x.t = bar[].t-1
-      x.fn(addr x, r)
-      bar[].t = bar[].t-2
-      mustTail bar[].fn(bar, r)
-
   proc fib[T](foo: ptr Foo[T]; r: ptr T) {.tco.} =
-    if foo[].a < 2:
-      foo[].b += foo[].a
-      r[] += foo[].b
+    case r[]
+    of 0:
+      r[] = foo[].a
+    of 1:
+      r[] = foo[].b
     else:
-      var x: Bar[T, T]
-      x.t = foo[].a-1
-      x.fn = serialize fib[T, T]
-      x.fn(addr x, r)
-      foo[].a = foo[].a-2
+      dec r[]
+      var n = foo[].a + foo[].b
+      foo[].a = foo[].b
+      foo[].b = n
+
+      doAssert foo[].a <= n
       mustTail foo[].fn(foo, r)
 
-  proc calc[T](a, b: T): T =
+  proc calc[T](t: T): T =
+    result = t
     var foo: Foo[T]
-    foo.a = a
-    foo.b = b
+    foo.a = 0
+    foo.b = 1
     foo.fn = serialize fib[T]
     foo.fn(addr foo, addr result)
 
-  proc calc[T, R](t: T): R =
-    var bar: Bar[T, R]
-    bar.t = t
-    bar.fn = serialize fib[T, R]
-    bar.fn(addr bar, addr result)
+  result = calc n
+  case n
+  of 35: doAssert result == 9227465'u
+  of 93: doAssert result == 12200160415121876738'u
+  else: echo n, "=", result
 
-  doAssert 102334155 == calc(40'i32, 0)
-  doAssert 102334155 == calc[int64, uint](40)
+proc main =
+  var cfg = newDefaultConfig()
+  cfg.warmupBudget = 3.0
+  cfg.budget = 1.0
+  cfg.verbose = true
+
+  benchmark cfg:
+    proc tailcall() {.measure.} =
+      demo(93)
 
 main()
