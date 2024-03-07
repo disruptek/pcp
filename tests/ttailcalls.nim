@@ -34,8 +34,8 @@ proc flick(x: int) {.tco.} =
     return
   flick(x)
 
-proc flip(x: int): bool {.tco.} =
-  return work(x) > 0
+proc flip(x: int) {.tco.} =
+  discard work(x)
 
 proc main =
   var cfg = newDefaultConfig()
@@ -46,7 +46,8 @@ proc main =
     proc looping() {.measure.} =
       n.store(N)
       var x = N
-      while flip(x):
+      while x > 0:
+        flip(x)
         dec x
 
     proc recursion() {.measure.} =

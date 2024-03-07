@@ -24,4 +24,5 @@ macro tco*(function: untyped): untyped =
     result.addPragma ident"inline"
   when compileOption"stackTrace":
     if function.kind == nnkProcDef:
+      result.addPragma ident"noreturn"
       result = pushPopOff(ident"stackTrace", result)
