@@ -1,5 +1,4 @@
-import pcp/registry
-import pcp/tailcalls
+import pcp
 
 proc main =
   type
@@ -12,7 +11,7 @@ proc main =
       fn: Fun[Bar[T, R], R]
       t: T
 
-  proc fib[T, R](bar: ptr Bar[T, R]; r: ptr R) {.nimcall.} =
+  proc fib[T, R](bar: ptr Bar[T, R]; r: ptr R) {.tco.} =
     if bar[].t < 2:
       r[] += R bar[].t
     else:
@@ -22,7 +21,7 @@ proc main =
       bar[].t = bar[].t-2
       mustTail bar[].fn(bar, r)
 
-  proc fib[T](foo: ptr Foo[T]; r: ptr T) {.nimcall.} =
+  proc fib[T](foo: ptr Foo[T]; r: ptr T) {.tco.} =
     if foo[].a < 2:
       foo[].b += foo[].a
       r[] += foo[].b

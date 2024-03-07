@@ -3,7 +3,7 @@ import pcp/ast
 
 proc install(stmts: NimNode; call: NimNode): NimNode =
   ## store the calling symbol in a variable to ensure we can
-  ## make a tail call signature without breaking syntax
+  ## make a tail call signature without breaking c syntax
   result = genSym(nskVar, "tailcall_fp")
   stmts.add:
     newVarStmt(result, call[0])
@@ -15,10 +15,12 @@ proc tco(call: NimNode): NimNode =
   ## wrap a call in a statement list which emits a return
   ## statement with the musttail compiler attribute
   result = newStmtList()
+
+  # inject a `var tailcall_fp = call[0]` assignment so that the user can
+  # supply something which merely evaluates to a function pointer
   let call = install(result, call)
-  when compileOption"stackTrace":
-    {.error: "never mix pcp and stracktraces... trust me".}
-  elif defined(clang):
+
+  when defined(clang):
     result.add newEmit "__attribute__((musttail)) return"
     result.add call
     result.add newEmit ";"
@@ -28,9 +30,7 @@ proc tco(call: NimNode): NimNode =
     result.add newEmit ";"
   else:
     {.warning: "tail calls require clang/gcc".}
-    result.add call
-  result = pushPopOff(ident"stackTrace", result)
-  result = pushPopOff(ident"profiler", result)
+    result.add call  # maybe it won't matter...
 
 macro mustTail*(tipe: typedesc; call: typed): untyped =
   ## perform a tail call with a return type; suitable for typed calls

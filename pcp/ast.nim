@@ -15,3 +15,11 @@ proc pushPopBracketOff*(form: NimNode; name: NimNode; body: NimNode): NimNode =
   ## wrap the body in a {.push form[name]: off.} {.pop.} pair
   let bracket = nnkBracketExpr.newTree(form, name)
   result = pushPopOff(bracket, body)
+
+macro tco*(function: untyped): untyped =
+  ## annotate a function type/decl for tail-call optimization
+  result = function
+  result.addPragma ident"nimcall"
+  when compileOption"stackTrace":
+    if function.kind == nnkProcDef:
+      result = pushPopOff(ident"stackTrace", result)

@@ -1,6 +1,8 @@
 import std/genasts
 import std/macros
 
+import pcp/ast
+
 const pcpDynamic {.booldefine.} = false
 
 type
@@ -9,7 +11,7 @@ type
       n: int
       p: pointer
 
-    Fn*[T, R] = proc(x: ptr T; r: ptr R) {.nimcall.}
+    Fn*[T, R] = proc(x: ptr T; r: ptr R) {.tco.}
 
 proc `=copy`[T, R](target: var Fun[T, R]; source: Fun[T, R]) =
   target.n = source.n

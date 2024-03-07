@@ -1,7 +1,7 @@
 import std/atomics
 import std/hashes
 
-import pcp/tailcalls
+import pcp
 
 const N =
   when defined(danger):
@@ -11,32 +11,32 @@ const N =
 
 var n: Atomic[int]
 
-proc work(x: int): int {.noinline.} =
+template work(x: int): untyped =
   fetchSub(n, 1)
 
 # critically, provide some prototypes
-proc flop(x: int) {.noinline.}
-proc flap(x: int) {.noinline.}
+proc flop(x: int) {.tco.}
+proc flap(x: int) {.tco.}
 
-proc flap(x: int) {.noinline.} =
+proc flap(x: int) {.tco.} =
   var x = work(x)
   if x <= 0:
     return
   mustTail flop(x)
 
-proc flop(x: int) {.noinline.} =
+proc flop(x: int) {.tco.} =
   var x = work(x)
   if x <= 0:
     return
   mustTail flap(x)
 
-proc flick(x: int) {.noinline.} =
+proc flick(x: int) {.tco.} =
   var x = work(x)
   if x <= 0:
     return
   flick(x)
 
-proc flip(x: int): bool {.noinline.} =
+proc flip(x: int): bool {.tco.} =
   return work(x) > 0
 
 import pkg/criterion
