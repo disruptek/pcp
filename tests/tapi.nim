@@ -5,7 +5,7 @@ import pcp
 proc demo(n: uint): uint {.discardable.} =
   type
     Foo[T] {.byref.} = object
-      fn: Fun[Foo[T], T]
+      fn: Fun
       a: T
       b: T
 
@@ -27,7 +27,7 @@ proc demo(n: uint): uint {.discardable.} =
     var foo: Foo[T]
     foo.a = 0
     foo.b = 1
-    foo.fn.fp = fib[T]
+    foo.fn.fp = cast[Fn](fib[T])
     foo.fn(addr foo, cast[pointer](nil), addr result)
 
   result = calc n

@@ -7,14 +7,16 @@ import pcp/registry
 const pcpTypedPass {.booldefine.} = false
 
 proc install(stmts: NimNode; call: NimNode): NimNode =
-  ## store the calling symbol in a variable to ensure we can
-  ## make a tail call signature without breaking c syntax
-  result = genSym(nskVar, "tailcall_fp")
-  stmts.add:
-    newVarStmt(result, call[0])
-  result = newCall(result)
-  for arg in 1 ..< call.len:
-    result.add call[arg]
+  ## lift the call and its arguments to ensure we can later
+  ## make a tail-call signature without breaking c syntax
+  var syms = newSeq[NimNode](call.len)
+  for index, item in call.pairs:
+    syms[index] = genSym(nskVar, "tco")
+    stmts.add:
+      newVarStmt(syms[index], item)
+  result = newCall(syms[0])
+  for index in 1..syms.high:
+    result.add syms[index]
 
 proc tco(call: NimNode): NimNode =
   ## wrap a call in a statement list which emits a return
@@ -73,13 +75,6 @@ macro tco*(function: untyped): untyped =
 
 proc looksLikePtr(n: NimNode): bool =
   n.kind == nnkBracketExpr and n[0].kind == nnkPtrTy
-
-macro `fp=`*[T, R, Z](lhs: Fun[T, R]; rhs: Fn[T, Z]): untyped =
-  ## api for serialized function symbol assignment...
-  result = getTypeImpl lhs
-  result = result[2][0][1] # fn type
-  result = nnkCast.newTree(result, rhs)
-  result = newAssignment(lhs, newCall(bindSym"serialize", result))
 
 macro recurse*(this: typed; m: typed; r: typed): untyped =
   ## recurse using `this` as the continuation and `r` as the result.

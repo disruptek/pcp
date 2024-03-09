@@ -12,14 +12,14 @@ macro tco(function: untyped): untyped =
   dressWithPragmas function
 
 type
-    Fun*[T, R] {.union.} = object
-      fn: Fn[T, R]
+    Fun* {.union.} = object
+      fn: Fn
       n: int
       p: pointer
 
-    Fn*[T, R] = proc(x: ptr T; m: pointer; r: ptr R) {.tco.}
+    Fn* = proc(x: pointer; m: pointer; r: pointer) {.tco.}
 
-proc `=copy`[T, R](target: var Fun[T, R]; source: Fun[T, R]) =
+proc `=copy`(target: var Fun; source: Fun) =
   target.n = source.n
 
 var functions: seq[pointer]
@@ -53,8 +53,8 @@ proc register*(function: NimNode): NimNode =
     once:
       functions.add: cast[pointer](function)
 
-macro serialize*[T, R](fun: Fn[T, R]): untyped =
-  result = newGeneric(bindSym"Fun", T.getTypeInst, R.getTypeInst)
+macro serialize*(fun: Fn): untyped =
+  result = bindSym"Fun"
   result = newStmtList(register(fun), ser(fun, result))
 
 macro deserialize*(index: int; tipe: typedesc): untyped =
@@ -62,17 +62,22 @@ macro deserialize*(index: int; tipe: typedesc): untyped =
 
 proc fp(fun: NimNode): NimNode =
   let t = getTypeInst fun
-  result = deser(newDotExpr(fun, ident"n"),
-                 newGeneric(bindSym"Fn", t[1], t[2]))
+  result = deser(newDotExpr(fun, ident"n"), bindSym"Fn")
 
-macro fp*[T, R](fun: Fun[T, R]): untyped =
+macro fp*(fun: Fun): untyped =
   ## recover a function pointer from `fun`
   result = fp(fun)
 
+macro `fp=`*(lhs: Fun; rhs: Fn): untyped =
+  ## api for serialized function symbol assignment...
+  result = getTypeImpl lhs
+  result = result[2][0][1] # fn type
+  result = nnkCast.newTree(result, rhs)
+  result = newAssignment(lhs, newCall(bindSym"serialize", result))
+
 {.push experimental: "callOperator".}
-macro `()`*[T, R](fun: Fun[T, R]; args: varargs[typed]): untyped =
+macro `()`*(fun: Fun; args: varargs[typed]): untyped =
   ## call `fun` with `args`
-  let t = newGeneric(bindSym"Fn", T, R)
   result = newCall(fun.fp)
   for arg in args.items:
     result.add arg
