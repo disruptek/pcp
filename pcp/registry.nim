@@ -65,12 +65,13 @@ proc fp(fun: NimNode): NimNode =
 
 macro fp*(fun: Fun): untyped =
   ## recover a function pointer from `fun`
-  result = fp(fun)
+  bindSym"Fn".newCast: fp(fun)
 
-macro `fp=`*(lhs: Fun; rhs: Fn): untyped =
+macro `fp=`*(lhs: Fun; rhs: typed): untyped =
   ## api for serialized function symbol assignment...
   result = getTypeImpl lhs
   result = result[2][0][1] # fn type
+  # XXX: do some type-checking here
   result = nnkCast.newTree(result, rhs)
   result = newAssignment(lhs, newCall(bindSym"serialize", result))
 
