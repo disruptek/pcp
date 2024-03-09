@@ -1,7 +1,6 @@
 import std/macros
 
 const pcpHasTailCalls* = defined(clang) or defined(gcc)
-const pcpTypedPass {.booldefine.} = true
 
 template newEmit*(s: string): untyped =
   nnkPragma.newTree(nnkExprColonExpr.newTree(ident"emit", s.newLit))
@@ -30,12 +29,13 @@ proc filter*(n: NimNode; f: NodeFilter): NimNode =
   ## if the filter yields nil, the node is simply copied.  otherwise, the
   ## node is replaced.
   result = f(n)
-  if result.isNil:
+  if result.isNil: # == nil:
+    # typechecked nodes may not be modified
     result = copyNimNode n
-    for kid in items(n):
+    for kid in n.items:
       result.add filter(kid, f)
 
-proc rewriteArgList(n: NimNode): NimNode =
+proc rewriteArgList*(n: NimNode): NimNode =
   ## nnkArgList -> nnkBracket
   if n.kind == nnkArgList:
     result = nnkBracket.newTree()
@@ -43,24 +43,21 @@ proc rewriteArgList(n: NimNode): NimNode =
       result.add:
         filter(item, rewriteArgList)
 
-macro pass0(procsym: typed; function: typed): untyped =
-  result = function
-  result = filter(result, rewriteArgList)
-
-macro tco*(function: untyped): untyped =
-  ## annotate a function type/decl for tail-call optimization
+proc dressWithPragmas*(function: NimNode): NimNode =
   result = function
   result.addPragma ident"nimcall"
   when pcpHasInlinedTCO:
     result.addPragma ident"inline"
-  if function.kind == nnkProcDef:
-    when pcpHasTailCalls:
-      result.addPragma ident"noreturn"
-    # give the compiler a chance to ignore our first pass
-    when pcpTypedPass:
-      if result[6].kind != nnkEmpty:  # don't touch prototype bodies
-        result[6] = newCall(bindSym"pass0", function[0], result[6])
-  when compileOption"stackTrace" or compileOption"lineTrace":
+  when false:
     if function.kind == nnkProcDef:
-      result = pushPopOff(ident"stackTrace", result)
-      result = pushPopOff(ident"lineTrace", result)
+      when pcpHasTailCalls:
+        result.addPragma ident"noreturn"
+
+proc newGeneric*(sym: NimNode; args: varargs[NimNode]): NimNode =
+  ## convenience for creating nnkBracketExpr
+  result = nnkBracketExpr.newTree(sym)
+  for item in args.items:
+    result.add item
+
+proc newCast*(tipe: typedesc | NimNode; arg: NimNode): NimNode =
+  result = nnkCast.newTree(tipe, arg)

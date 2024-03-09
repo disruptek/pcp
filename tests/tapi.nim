@@ -9,7 +9,7 @@ proc demo(n: uint): uint {.discardable.} =
       a: T
       b: T
 
-  proc fib[T](foo: ptr Foo[T]; r: ptr T) {.tco.} =
+  proc fib[T](foo: ptr Foo[T]; mom: pointer; r: ptr T) {.tco.} =
     case r[]
     of 0:
       r[] = foo[].a
@@ -20,15 +20,15 @@ proc demo(n: uint): uint {.discardable.} =
       var n = foo[].a + foo[].b
       foo[].a = foo[].b
       foo[].b = n
-      mustTail foo[].fn(foo, r)
+      foo.recurse(mom, r)
 
   proc calc[T](t: T): T =
     result = t
     var foo: Foo[T]
     foo.a = 0
     foo.b = 1
-    foo.fn = serialize fib[T]
-    foo.fn(addr foo, addr result)
+    foo.fn.fp = fib[T]
+    foo.fn(addr foo, cast[pointer](nil), addr result)
 
   result = calc n
   case n
