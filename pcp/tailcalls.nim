@@ -2,7 +2,6 @@
 import std/macros
 
 import pcp/ast
-import pcp/registry
 
 const pcpTypedPass {.booldefine.} = false
 
@@ -56,7 +55,7 @@ macro mustTail*(call: typed): untyped =
     result.add call
     result.add nnkReturnStmt.newTree newEmptyNode()
 
-macro pass0(procsym: typed; function: typed): untyped =
+macro pass0(procsym: typed; function: typed): untyped {.used.} =
   result = function
   result = filter(result, rewriteArgList)
 

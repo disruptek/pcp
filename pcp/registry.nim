@@ -61,7 +61,6 @@ macro deserialize*(index: int; tipe: typedesc): untyped =
   deser(index, tipe)
 
 proc fp(fun: NimNode): NimNode =
-  let t = getTypeInst fun
   result = deser(newDotExpr(fun, ident"n"), bindSym"Fn")
 
 macro fp*(fun: Fun): untyped =
