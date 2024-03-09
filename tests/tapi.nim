@@ -9,7 +9,7 @@ proc demo(n: uint): uint {.discardable.} =
       a: T
       b: T
 
-  proc fib[T](foo: ptr Foo[T]; mom: pointer; r: ptr T) {.tco.} =
+  proc fib[T](foo: ptr Foo[T]; r: ptr T) {.tco.} =
     case r[]
     of 0:
       r[] = foo[].a
@@ -20,7 +20,7 @@ proc demo(n: uint): uint {.discardable.} =
       var n = foo[].a + foo[].b
       foo[].a = foo[].b
       foo[].b = n
-      foo.recurse(mom, r)
+      foo.recurse(r)
 
   proc calc[T](t: T): T =
     result = t

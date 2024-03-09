@@ -59,5 +59,8 @@ proc newGeneric*(sym: NimNode; args: varargs[NimNode]): NimNode =
   for item in args.items:
     result.add item
 
-proc newCast*(tipe: typedesc | NimNode; arg: NimNode): NimNode =
-  result = nnkCast.newTree(tipe, arg)
+proc newCast*(tipe: NimNode; arg: NimNode): NimNode =
+  nnkCast.newTree(tipe, arg)
+
+proc newCast*(tipe: typedesc; arg: NimNode): NimNode =
+  nnkCast.newTree(tipe.getTypeInst, arg)

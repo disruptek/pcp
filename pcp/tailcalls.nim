@@ -75,11 +75,11 @@ macro tco*(function: untyped): untyped =
 proc looksLikePtr(n: NimNode): bool =
   n.kind == nnkBracketExpr and n[0].kind == nnkPtrTy
 
-macro recurse*(this: typed; m: typed; r: typed): untyped =
+macro recurse*(this: typed; r: typed): untyped =
   ## recurse using `this` as the continuation and `r` as the result.
   result = this
   if this.looksLikePtr:
     result = nnkDerefExpr.newTree(this)
   result = newDotExpr(result, ident"fn")
-  result = newCall(result, this, m, r)
+  result = newCall(result, this, newCast(pointer, newNilLit()), r)
   result = newCall(bindSym"mustTail", result)
