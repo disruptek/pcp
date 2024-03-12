@@ -64,3 +64,38 @@ proc newCast*(tipe: NimNode; arg: NimNode): NimNode =
 
 proc newCast*(tipe: typedesc; arg: NimNode): NimNode =
   nnkCast.newTree(tipe.getTypeInst, arg)
+
+template dot*(a, b: NimNode): NimNode =
+  ## for constructing foo.bar
+  {.line: instantiationInfo().}:
+    newDotExpr(a, b)
+
+template dot*(a: NimNode; b: string): NimNode =
+  ## for constructing `.`(foo, "bar")
+  {.line: instantiationInfo().}:
+    dot(a, ident(b))
+
+template eq*(a, b: NimNode): NimNode =
+  ## for constructing foo=bar in a call
+  {.line: instantiationInfo().}:
+    nnkExprEqExpr.newNimNode(a).add(a).add(b)
+
+template eq*(a: string; b: NimNode): NimNode =
+  ## for constructing foo=bar in a call
+  {.line: instantiationInfo().}:
+    eq(ident(a), b)
+
+template colon*(a, b: NimNode): NimNode =
+  ## for constructing foo: bar in a ctor
+  {.line: instantiationInfo().}:
+    nnkExprColonExpr.newNimNode(a).add(a).add(b)
+
+template colon*(a: string; b: NimNode): NimNode =
+  ## for constructing foo: bar in a ctor
+  {.line: instantiationInfo().}:
+    colon(ident(a), b)
+
+template colon*(a: string | NimNode; b: string | int): NimNode =
+  ## for constructing foo: bar in a ctor
+  {.line: instantiationInfo().}:
+    colon(a, newLit(b))
